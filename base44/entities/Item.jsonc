@@ -1,0 +1,43 @@
+{
+  "name": "Item",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the item"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "done",
+        "processed"
+      ],
+      "default": "pending",
+      "description": "Current status"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "bug",
+        "feature",
+        "task",
+        "docs"
+      ],
+      "default": "task",
+      "description": "Item category"
+    },
+    "number": {
+      "type": "number",
+      "description": "A numeric value"
+    },
+    "processed_at": {
+      "type": "string",
+      "description": "Timestamp when item was processed"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}
