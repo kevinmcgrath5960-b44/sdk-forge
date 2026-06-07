@@ -34,17 +34,17 @@ export default function Dashboard() {
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
-  const fetchItems = async () => {
+  const fetchItems = async (showSpinner = true) => {
     try {
-      setLoading(true);
+      if (showSpinner) setLoading(true);
       const data = await base44.entities.Item.list("-created_date", 200);
       if (mountedRef.current) {
         setItems(data);
-        setLoading(false);
+        if (showSpinner) setLoading(false);
       }
     } catch (e) {
       console.error("fetchItems error:", e);
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current && showSpinner) setLoading(false);
     }
   };
 
@@ -229,7 +229,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <AgentChatWidget agentName="item_manager_agent" onAgentAction={fetchItems} />
+      <AgentChatWidget agentName="item_manager_agent" onAgentAction={() => fetchItems(false)} />
     </div>
   );
 }
