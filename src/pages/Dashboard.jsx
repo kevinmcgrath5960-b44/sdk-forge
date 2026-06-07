@@ -7,10 +7,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, LayoutDashboard, RefreshCw, Bot, TrendingUp, CheckCircle2, Clock, Zap } from "lucide-react";
+import { Loader2, LayoutDashboard, RefreshCw, CheckCircle2, Clock, Zap } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { updateDashboard } from "@/functions/updateDashboard";
 import { useToast } from "@/components/ui/use-toast";
+import AgentChatWidget from "@/components/AgentChatWidget";
 
 const STATUS_COLORS = {
   pending: "#f59e0b",
@@ -30,8 +30,6 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [agentRunning, setAgentRunning] = useState(false);
-  const [agentLog, setAgentLog] = useState("");
 
   const fetchItems = async () => {
     setLoading(true);
@@ -80,16 +78,6 @@ export default function Dashboard() {
     return { name: c.charAt(0).toUpperCase() + c.slice(1), avg: Math.round(avg) };
   });
 
-  const runAgent = async () => {
-    setAgentRunning(true);
-    setAgentLog("");
-    const res = await updateDashboard({});
-    setAgentLog(res.data?.summary || "Agent completed.");
-    await fetchItems();
-    toast({ title: "Agent finished", description: res.data?.summary });
-    setAgentRunning(false);
-  };
-
   const statCards = [
     { label: "Total Items", value: total, icon: LayoutDashboard, color: "text-primary" },
     { label: "Pending", value: byStatus[0].value, icon: Clock, color: "text-amber-500" },
@@ -117,21 +105,8 @@ export default function Dashboard() {
           <Button variant="outline" size="sm" onClick={fetchItems} className="gap-2">
             <RefreshCw className="w-3.5 h-3.5" /> Refresh
           </Button>
-          <Button size="sm" onClick={runAgent} disabled={agentRunning} className="gap-2">
-            {agentRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
-            Run Agent
-          </Button>
         </div>
       </div>
-
-      {agentLog && (
-        <Card className="mb-6 border-primary/20 bg-primary/5">
-          <CardContent className="py-3 px-4 flex gap-2 items-start">
-            <Bot className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-            <p className="text-sm text-foreground">{agentLog}</p>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -243,6 +218,8 @@ export default function Dashboard() {
           </Badge>
         ))}
       </div>
+
+      <AgentChatWidget agentName="ItemManagerAgent" onAgentAction={fetchItems} />
     </div>
   );
 }
