@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const base = body.base || 'USD';
-    const targets = (body.targets || ['EUR', 'GBP', 'JPY']).join(',');
+    const targets = (body.targets || ['EUR', 'GBP', 'DKK']).join(',');
 
     const res = await fetch(`https://api.frankfurter.app/latest?from=${base}&to=${targets}`);
     if (!res.ok) throw new Error(`Frankfurter API error: ${res.status}`);
