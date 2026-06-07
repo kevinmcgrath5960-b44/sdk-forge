@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // Model: gemini-1.5-flash runs on the FREE tier. Swap to "gemini-2.5-flash" if you prefer (may need PAYG).
-const MODEL = "gemini-1.5-flash";
+const MODEL = "gemini-2.5-flash";
 
 Deno.serve(async (req) => {
   try {
