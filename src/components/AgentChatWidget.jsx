@@ -32,17 +32,22 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
     conversationRef.current = conv;
 
     const unsub = base44.agents.subscribeToConversation(conv.id, (updated) => {
-      const msgs = (updated.messages || []).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      const rawMessages = updated?.messages;
+      if (!Array.isArray(rawMessages)) return;
+
+      const msgs = rawMessages
+        .filter((m) => m && m.role && typeof m.content === "string")
+        .map((m) => ({ role: m.role, content: m.content }));
+
       setMessages(msgs);
-      const last = updated.messages?.[updated.messages.length - 1];
-      if (last?.role === "assistant") {
+
+      const last = rawMessages[rawMessages.length - 1];
+      if (last?.role === "assistant" && last?.content) {
         setLoading(false);
         if (onAgentAction) onAgentAction();
       }
     });
+
     unsubscribeRef.current = unsub;
     return conv;
   };
@@ -55,17 +60,8 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
-    try {
-      const conv = await getOrCreateConversation();
-      await base44.agents.addMessage(conv, { role: "user", content: text });
-    } catch (err) {
-      console.error("Agent error:", err);
-      setLoading(false);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Something went wrong. Please try again." },
-      ]);
-    }
+    const conv = await getOrCreateConversation();
+    await base44.agents.addMessage(conv, { role: "user", content: text });
   };
 
   const handleKey = (e) => {
@@ -91,20 +87,23 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
             </Button>
           </CardHeader>
 
-          <CardContent className="flex-1 overflow-y-auto p-3 space-y-2">
-            {messages.length === 0 && (
+          <CardContent className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
+            {messages.length === 0 && !loading && (
               <p className="text-xs text-muted-foreground text-center mt-4">
                 Ask the agent to review your items, suggest status changes, or run a dashboard update.
               </p>
             )}
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm break-words whitespace-pre-wrap overflow-hidden ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground"
-                }`} style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                  {msg.content?.slice(0, 1000)}{msg.content?.length > 1000 ? "…" : ""}
+                <div
+                  className={`max-w-[80%] rounded-xl px-3 py-2 text-sm break-words ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground"
+                  }`}
+                  style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+                >
+                  {String(msg.content || "")}
                 </div>
               </div>
             ))}
