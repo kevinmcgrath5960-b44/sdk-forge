@@ -10,6 +10,7 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [conversation, setConversation] = useState(null);
+  const conversationRef = useRef(null);
   const bottomRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
@@ -26,8 +27,9 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
   }, []);
 
   const getOrCreateConversation = async () => {
-    if (conversation) return conversation;
+    if (conversationRef.current) return conversationRef.current;
     const conv = await base44.agents.createConversation({ agent_name: agentName });
+    conversationRef.current = conv;
     setConversation(conv);
 
     const unsub = base44.agents.subscribeToConversation(conv.id, (updated) => {
@@ -46,7 +48,8 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
     return conv;
   };
 
-  const sendMessage = async () => {
+  const sendMessage = async (e) => {
+    if (e) e.preventDefault();
     const text = input.trim();
     if (!text || loading) return;
     setInput("");
@@ -116,7 +119,7 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
               onKeyDown={handleKey}
               disabled={loading}
             />
-            <Button size="icon" className="h-9 w-9 shrink-0" onClick={sendMessage} disabled={loading || !input.trim()}>
+            <Button type="button" size="icon" className="h-9 w-9 shrink-0" onClick={sendMessage} disabled={loading || !input.trim()}>
               <Send className="w-3.5 h-3.5" />
             </Button>
           </div>
