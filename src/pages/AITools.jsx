@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { geminiGenerateImage } from "@/functions/geminiGenerateImage";
+import { geminiExtractData } from "@/functions/geminiExtractData";
 import { Sparkles, Loader2, Image as ImageIcon, FileSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,8 +42,8 @@ export default function AITools() {
     if (!imgPrompt) return;
     setImgLoading(true);
     setImgUrl("");
-    const res = await base44.integrations.Core.GenerateImage({ prompt: imgPrompt });
-    setImgUrl(res.url);
+    const res = await geminiGenerateImage({ prompt: imgPrompt });
+    setImgUrl(res.data.url);
     setImgLoading(false);
   };
 
@@ -50,7 +52,7 @@ export default function AITools() {
     setExtractLoading(true);
     setExtractResult(null);
     const { file_url } = await base44.integrations.Core.UploadFile({ file: extractFile });
-    const res = await base44.integrations.Core.ExtractDataFromUploadedFile({
+    const res = await geminiExtractData({
       file_url,
       json_schema: {
         type: "object",
@@ -62,7 +64,7 @@ export default function AITools() {
         },
       },
     });
-    setExtractResult(res.output);
+    setExtractResult(res.data.output);
     setExtractLoading(false);
   };
 
