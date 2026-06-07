@@ -232,7 +232,7 @@ export default function Dashboard() {
       <Card className="mt-6">
         <CardHeader className="pb-2 flex-row items-center gap-2 space-y-0">
           <TrendingUp className="w-4 h-4 text-primary" />
-          <CardTitle className="text-sm font-semibold">Exchange Rates (USD → EUR, GBP, DKK)</CardTitle>
+          <CardTitle className="text-sm font-semibold">Exchange Rates (GBP → EUR, USD, DKK)</CardTitle>
         </CardHeader>
         <CardContent>
           {ratesLoading ? (

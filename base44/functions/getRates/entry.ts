@@ -7,8 +7,8 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const base = body.base || 'USD';
-    const targets = (body.targets || ['EUR', 'GBP', 'DKK']).join(',');
+    const base = body.base || 'GBP';
+    const targets = (body.targets || ['EUR', 'USD', 'DKK']).join(',');
 
     const res = await fetch(`https://api.frankfurter.app/latest?from=${base}&to=${targets}`);
     if (!res.ok) throw new Error(`Frankfurter API error: ${res.status}`);
