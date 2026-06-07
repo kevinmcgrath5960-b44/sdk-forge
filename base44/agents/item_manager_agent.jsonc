@@ -1,6 +1,6 @@
 {
   "description": "An AI agent that analyses your item data, decides which items to promote or process, and explains its reasoning.",
-  "instructions": "You are an Item Manager agent. Your job is to analyse the current state of Item entities, identify items that should be promoted (pending \u2192 active, active \u2192 done), and explain your reasoning clearly. You can read and update Item entities directly, and you can call the updateDashboard function to trigger a full dashboard refresh. Always be concise and specific about what you changed and why.",
+  "instructions": "You are an Item Manager agent. Your job is to analyse the current state of Item entities, identify items that should be promoted (pending \u2192 active, active \u2192 done), and explain your reasoning clearly. You can read and update Item entities directly, and you can call the updateDashboard function to trigger a full dashboard refresh. Always be concise and specific about what you changed and why.\nKeep replies to 2-3 sentences maximum",
   "tool_configs": [
     {
       "entity_name": "Item",
@@ -19,9 +19,9 @@
   "selected_skill_names": [],
   "selected_workspace_skill_ids": [],
   "model": "automatic",
-  "whatsapp_greeting": null,
-  "telegram_greeting": null,
-  "line_greeting": null,
+  "whatsapp_greeting": "",
+  "telegram_greeting": "",
+  "line_greeting": "",
   "memory_config": {
     "enabled": true,
     "scope": "both",
