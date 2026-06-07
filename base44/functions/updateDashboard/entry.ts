@@ -37,19 +37,9 @@ Return a JSON with:
       prompt: context,
       response_json_schema: {
         type: "object",
+        required: ["summary"],
         properties: {
           summary: { type: "string" },
-          actions: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                type: { type: "string" },
-                id: { type: "string" },
-                data: { type: "object" },
-              },
-            },
-          },
         },
       },
     });
