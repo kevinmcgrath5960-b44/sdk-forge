@@ -1,29 +1,49 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Component } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2, Bot, Send, X, ChevronDown } from "lucide-react";
+import { Loader2, Bot, Send, X, ChevronDown, AlertCircle } from "lucide-react";
 
-export default function AgentChatWidget({ agentName, onAgentAction }) {
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-3 text-xs text-destructive flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          Something went wrong in the chat. Please reload.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function AgentChatWidgetInner({ agentName, onAgentAction }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const conversationRef = useRef(null);
   const bottomRef = useRef(null);
   const unsubscribeRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (unsubscribeRef.current) unsubscribeRef.current();
+    };
+  }, []);
 
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, loading]);
-
-  useEffect(() => {
-    return () => {
-      if (unsubscribeRef.current) unsubscribeRef.current();
-    };
-  }, []);
 
   const getOrCreateConversation = async () => {
     if (conversationRef.current) return conversationRef.current;
@@ -32,24 +52,31 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
     conversationRef.current = conv;
 
     const unsub = base44.agents.subscribeToConversation(conv.id, (updated) => {
-      const rawMessages = updated?.messages;
-      if (!Array.isArray(rawMessages)) return;
+      try {
+        if (!mountedRef.current) return;
 
-      // Only show messages that have actual text content
-      const msgs = rawMessages
-        .filter((m) => m && m.role && m.content && typeof m.content === "string" && m.content.trim().length > 0)
-        .map((m) => ({ role: m.role, content: m.content }));
+        const rawMessages = updated?.messages;
+        if (!Array.isArray(rawMessages)) return;
 
-      setMessages(msgs);
+        const msgs = rawMessages
+          .filter((m) => m && m.role && typeof m.content === "string" && m.content.trim().length > 0)
+          .map((m) => ({ role: m.role, content: m.content }));
 
-      // Stop loading when we get a final non-empty assistant message
-      // Check both status field and that the last visible message is from assistant
-      const last = rawMessages[rawMessages.length - 1];
-      const lastVisible = msgs[msgs.length - 1];
-      const agentIsIdle = updated?.status !== "running" && updated?.status !== "in_progress";
-      if (agentIsIdle && lastVisible?.role === "assistant" && last?.role !== "user") {
-        setLoading(false);
-        if (onAgentAction) onAgentAction();
+        setMessages(msgs);
+
+        // Detect completion: status is not actively running
+        const status = updated?.status;
+        const isRunning = status === "running" || status === "in_progress" || status === "thinking";
+        const lastRaw = rawMessages[rawMessages.length - 1];
+        const lastVisible = msgs[msgs.length - 1];
+
+        if (!isRunning && lastVisible?.role === "assistant" && lastRaw?.role !== "user") {
+          setLoading(false);
+          try { if (onAgentAction) onAgentAction(); } catch (_) {}
+        }
+      } catch (e) {
+        console.error("Subscription callback error:", e);
+        if (mountedRef.current) setLoading(false);
       }
     });
 
@@ -62,11 +89,20 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
     if (!text || loading) return;
 
     setInput("");
+    setError(null);
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
-    const conv = await getOrCreateConversation();
-    await base44.agents.addMessage(conv, { role: "user", content: text });
+    try {
+      const conv = await getOrCreateConversation();
+      await base44.agents.addMessage(conv, { role: "user", content: text });
+    } catch (err) {
+      console.error("sendMessage error:", err);
+      if (mountedRef.current) {
+        setLoading(false);
+        setError("Failed to send. Please try again.");
+      }
+    }
   };
 
   const handleKey = (e) => {
@@ -108,7 +144,7 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
                   }`}
                   style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
                 >
-                  {String(msg.content || "")}
+                  {String(msg.content)}
                 </div>
               </div>
             ))}
@@ -118,6 +154,9 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                 </div>
               </div>
+            )}
+            {error && (
+              <p className="text-xs text-destructive text-center">{error}</p>
             )}
             <div ref={bottomRef} />
           </CardContent>
@@ -153,5 +192,13 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
         {open ? <ChevronDown className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
       </Button>
     </div>
+  );
+}
+
+export default function AgentChatWidget(props) {
+  return (
+    <ErrorBoundary>
+      <AgentChatWidgetInner {...props} />
+    </ErrorBoundary>
   );
 }
