@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     if (!file_url || !json_schema) return Response.json({ error: 'file_url and json_schema are required' }, { status: 400 });
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!apiKey) return Response.json({ error: 'GEMINI_API_KEY is not set' }, { status: 500 });
 
     // Fetch file from public URL and convert to base64
     const fileRes = await fetch(file_url);
@@ -51,7 +52,8 @@ Deno.serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
-      return Response.json({ error: data?.error?.message || "Gemini API error" }, { status: response.status });
+      console.error('Gemini API Error:', data);
+      return Response.json({ error: data?.error?.message || "Gemini API error", details: data }, { status: response.status });
     }
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
