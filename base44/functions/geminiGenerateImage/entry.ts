@@ -40,14 +40,9 @@ Deno.serve(async (req) => {
     const b64 = imagePart.inlineData.data;
     const mimeType = imagePart.inlineData.mimeType || "image/png";
 
-    // Convert base64 to blob and upload
-    const imageBytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const blob = new Blob([imageBytes], { type: mimeType });
-
-    const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
-    const url = uploadResult?.file_url || uploadResult?.url;
-
-    return Response.json({ url });
+    // Return base64 data URL
+    const dataUrl = `data:${mimeType};base64,${b64}`;
+    return Response.json({ url: dataUrl });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
