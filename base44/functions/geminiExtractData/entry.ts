@@ -11,19 +11,17 @@ Deno.serve(async (req) => {
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
 
-    // Fetch the file and convert to base64
-    let fileRes;
-    try {
-      fileRes = await fetch(file_url);
-    } catch (fetchError) {
-      return Response.json({ error: `Failed to fetch file: ${fetchError.message}` }, { status: 500 });
-    }
-    
+    // Fetch file from public URL and convert to base64
+    const fileRes = await fetch(file_url);
     if (!fileRes.ok) {
-      return Response.json({ error: `Failed to fetch file: ${fileRes.status}` }, { status: 500 });
+      return Response.json({ error: `Failed to fetch file (HTTP ${fileRes.status})` }, { status: 500 });
     }
-    
+
     const fileBuffer = await fileRes.arrayBuffer();
+    if (fileBuffer.byteLength === 0) {
+      return Response.json({ error: 'File is empty' }, { status: 400 });
+    }
+
     const base64Data = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
     const mimeType = fileRes.headers.get("content-type") || "application/octet-stream";
 

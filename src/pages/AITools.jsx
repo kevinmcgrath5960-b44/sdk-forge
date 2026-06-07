@@ -51,21 +51,27 @@ export default function AITools() {
     if (!extractFile) return;
     setExtractLoading(true);
     setExtractResult(null);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file: extractFile });
-    const res = await geminiExtractData({
-      file_url,
-      json_schema: {
-        type: "object",
-        properties: {
-          invoice_number: { type: "string" },
-          date: { type: "string" },
-          total_amount: { type: "number" },
-          vendor: { type: "string" },
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: extractFile });
+      const res = await geminiExtractData({
+        file_url,
+        json_schema: {
+          type: "object",
+          properties: {
+            invoice_number: { type: "string" },
+            date: { type: "string" },
+            total_amount: { type: "number" },
+            vendor: { type: "string" },
+          },
         },
-      },
-    });
-    setExtractResult(res.data.output);
-    setExtractLoading(false);
+      });
+      setExtractResult(res.data.output);
+      toast({ title: "Success", description: "Data extracted successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: error.message || "Failed to extract data", variant: "destructive" });
+    } finally {
+      setExtractLoading(false);
+    }
   };
 
   return (
