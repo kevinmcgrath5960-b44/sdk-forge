@@ -99,12 +99,12 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
             )}
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
+                <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm break-words whitespace-pre-wrap overflow-hidden ${
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-foreground"
-                }`}>
-                  {msg.content}
+                }`} style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
+                  {msg.content?.slice(0, 1000)}{msg.content?.length > 1000 ? "…" : ""}
                 </div>
               </div>
             ))}
