@@ -9,8 +9,9 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState(null);
+  const [conversation, setConversation] = useState(null);
   const bottomRef = useRef(null);
+  const unsubscribeRef = useRef(null);
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -18,19 +19,42 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
     }
   }, [messages, loading]);
 
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) unsubscribeRef.current();
+    };
+  }, []);
+
+  const getOrCreateConversation = async () => {
+    if (conversation) return conversation;
+    const conv = await base44.agents.createConversation({ agent_name: agentName });
+    setConversation(conv);
+
+    const unsub = base44.agents.subscribeToConversation(conv.id, (updated) => {
+      const msgs = (updated.messages || []).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+      setMessages(msgs);
+      const last = updated.messages?.[updated.messages.length - 1];
+      if (last?.role === "assistant") {
+        setLoading(false);
+        if (onAgentAction) onAgentAction();
+      }
+    });
+    unsubscribeRef.current = unsub;
+    return conv;
+  };
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || loading) return;
     setInput("");
-    const userMsg = { role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
 
-    const response = await base44.agents.sendMessage(agentName, text, conversationId);
-    if (!conversationId) setConversationId(response.conversation_id);
-    setMessages((prev) => [...prev, { role: "assistant", content: response.message }]);
-    setLoading(false);
-    if (onAgentAction) onAgentAction();
+    const conv = await getOrCreateConversation();
+    await base44.agents.addMessage(conv, { role: "user", content: text });
   };
 
   const handleKey = (e) => {

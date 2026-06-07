@@ -1,13 +1,35 @@
 {
-  "name": "item_manager_agent",
-  "display_name": "Item Manager",
-  "instructions": "You are an Item Manager agent. Your job is to analyse the current state of Item entities, identify items that should be promoted (pending \u2192 active, active \u2192 done), and explain your reasoning clearly. You can read and update Item entities directly, and you can call the updateDashboard function to trigger a full dashboard refresh. Always be concise and specific about what you changed and why.",
   "description": "An AI agent that analyses your item data, decides which items to promote or process, and explains its reasoning.",
-  "welcome_message": "Hi! I'm your Item Manager. Ask me to review your items, suggest status changes, or run a full dashboard update.",
-  "suggested_prompts": [
-    "Review all pending items and promote any that are ready",
-    "How many items are in each status right now?",
-    "Run a full dashboard update and explain what you changed",
-    "Which bugs have been active the longest?"
-  ]
+  "instructions": "You are an Item Manager agent. Your job is to analyse the current state of Item entities, identify items that should be promoted (pending \u2192 active, active \u2192 done), and explain your reasoning clearly. You can read and update Item entities directly, and you can call the updateDashboard function to trigger a full dashboard refresh. Always be concise and specific about what you changed and why.",
+  "tool_configs": [
+    {
+      "entity_name": "Item",
+      "allowed_operations": [
+        "read",
+        "update"
+      ]
+    },
+    {
+      "function_name": "updateDashboard",
+      "description": "Triggers a full dashboard data refresh and AI-driven item promotion."
+    }
+  ],
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
+  "whatsapp_greeting": null,
+  "telegram_greeting": null,
+  "line_greeting": null,
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "include_other_conversation_context": false,
+    "instructions": null
+  },
+  "voice_config": {
+    "voice_id": null
+  },
+  "name": "item_manager_agent"
 }
