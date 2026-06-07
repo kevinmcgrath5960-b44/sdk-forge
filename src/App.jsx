@@ -19,6 +19,7 @@ import EmailPage from '@/pages/EmailPage';
 import Automation from '@/pages/Automation';
 import Tracking from '@/pages/Tracking';
 import AIChat from '@/pages/AIChat';
+import Dashboard from '@/pages/Dashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
           <Route path="/automation" element={<Automation />} />
           <Route path="/tracking" element={<Tracking />} />
           <Route path="/chat" element={<AIChat />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

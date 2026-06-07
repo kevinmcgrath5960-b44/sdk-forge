@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { 
-  Box, Users, Sparkles, FileUp, Mail, Zap, BarChart3, MessageSquare, LogOut, Terminal
+  Box, Users, Sparkles, FileUp, Mail, Zap, BarChart3, MessageSquare, LogOut, Terminal, LayoutDashboard
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ const navItems = [
   { path: "/automation", label: "Automation", icon: Zap },
   { path: "/tracking", label: "Tracking", icon: BarChart3 },
   { path: "/chat", label: "AI Chat", icon: MessageSquare },
+  { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 export default function AppLayout() {
