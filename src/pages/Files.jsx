@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { FileUp, Loader2, Link2, Lock, ExternalLink } from "lucide-react";
+import { FileUp, Loader2, Link2, Lock, ExternalLink, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,16 +14,26 @@ export default function Files() {
   const [publicFile, setPublicFile] = useState(null);
   const [publicUrl, setPublicUrl] = useState("");
   const [publicUploading, setPublicUploading] = useState(false);
+  const [publicCopied, setPublicCopied] = useState(false);
 
   const [privateFile, setPrivateFile] = useState(null);
   const [privateSignedUrl, setPrivateSignedUrl] = useState("");
   const [privateUploading, setPrivateUploading] = useState(false);
+  const [privateCopied, setPrivateCopied] = useState(false);
+
+  const copyToClipboard = async (url, setCopied) => {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const uploadPublic = async () => {
     if (!publicFile) return;
     setPublicUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file: publicFile });
-    setPublicUrl(file_url);
+    setPublicUrl("");
+    const result = await base44.integrations.Core.UploadFile({ file: publicFile });
+    const url = result?.file_url || result?.url || result;
+    setPublicUrl(url);
     setPublicUploading(false);
     toast({ title: "Public file uploaded" });
   };
@@ -31,8 +41,11 @@ export default function Files() {
   const uploadPrivate = async () => {
     if (!privateFile) return;
     setPrivateUploading(true);
-    const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: privateFile });
-    const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 300 });
+    setPrivateSignedUrl("");
+    const uploadResult = await base44.integrations.Core.UploadPrivateFile({ file: privateFile });
+    const file_uri = uploadResult?.file_uri || uploadResult;
+    const signResult = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 300 });
+    const signed_url = signResult?.signed_url || signResult;
     setPrivateSignedUrl(signed_url);
     setPrivateUploading(false);
     toast({ title: "Private file uploaded & signed URL created (5 min)" });
@@ -59,11 +72,17 @@ export default function Files() {
               {publicUploading && <Loader2 className="w-4 h-4 animate-spin" />} Upload Public
             </Button>
             {publicUrl && (
-              <div className="mt-3 p-3 bg-muted rounded-lg flex items-center gap-2 overflow-hidden">
-                <ExternalLink className="w-4 h-4 shrink-0 text-primary" />
-                <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary truncate hover:underline">
-                  {publicUrl}
-                </a>
+              <div className="mt-3 p-3 bg-muted rounded-lg space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Shareable link:</p>
+                <div className="flex items-center gap-2">
+                  <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary flex-1 min-w-0 break-all hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    {publicUrl}
+                  </a>
+                  <Button size="icon" variant="ghost" className="shrink-0 h-8 w-8" onClick={() => copyToClipboard(publicUrl, setPublicCopied)}>
+                    {publicCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
@@ -85,11 +104,17 @@ export default function Files() {
               {privateUploading && <Loader2 className="w-4 h-4 animate-spin" />} Upload Private
             </Button>
             {privateSignedUrl && (
-              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-600 mb-1 font-medium">Temporary signed URL (expires in 5 minutes)</p>
-                <a href={privateSignedUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary truncate hover:underline block">
-                  {privateSignedUrl.slice(0, 80)}...
-                </a>
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                <p className="text-xs text-amber-600 font-medium">Temporary signed URL (expires in 5 minutes):</p>
+                <div className="flex items-center gap-2">
+                  <a href={privateSignedUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary flex-1 min-w-0 break-all hover:underline flex items-center gap-1">
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    {privateSignedUrl}
+                  </a>
+                  <Button size="icon" variant="ghost" className="shrink-0 h-8 w-8" onClick={() => copyToClipboard(privateSignedUrl, setPrivateCopied)}>
+                    {privateCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
