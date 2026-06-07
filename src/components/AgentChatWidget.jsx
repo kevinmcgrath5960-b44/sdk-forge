@@ -35,14 +35,19 @@ export default function AgentChatWidget({ agentName, onAgentAction }) {
       const rawMessages = updated?.messages;
       if (!Array.isArray(rawMessages)) return;
 
+      // Only show messages that have actual text content
       const msgs = rawMessages
-        .filter((m) => m && m.role && typeof m.content === "string")
+        .filter((m) => m && m.role && m.content && typeof m.content === "string" && m.content.trim().length > 0)
         .map((m) => ({ role: m.role, content: m.content }));
 
       setMessages(msgs);
 
+      // Stop loading when we get a final non-empty assistant message
+      // Check both status field and that the last visible message is from assistant
       const last = rawMessages[rawMessages.length - 1];
-      if (last?.role === "assistant" && last?.content) {
+      const lastVisible = msgs[msgs.length - 1];
+      const agentIsIdle = updated?.status !== "running" && updated?.status !== "in_progress";
+      if (agentIsIdle && lastVisible?.role === "assistant" && last?.role !== "user") {
         setLoading(false);
         if (onAgentAction) onAgentAction();
       }
