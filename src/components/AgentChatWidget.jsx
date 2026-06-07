@@ -30,6 +30,7 @@ function AgentChatWidgetInner({ agentName, onAgentAction }) {
   const bottomRef = useRef(null);
   const unsubscribeRef = useRef(null);
   const mountedRef = useRef(true);
+  const actionFiredRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -65,14 +66,17 @@ function AgentChatWidgetInner({ agentName, onAgentAction }) {
         setMessages(msgs);
 
         // Detect completion: status is not actively running
-        const status = updated?.status;
-        const isRunning = status === "running" || status === "in_progress" || status === "thinking";
         const lastRaw = rawMessages[rawMessages.length - 1];
         const lastVisible = msgs[msgs.length - 1];
+        const agentDone = lastVisible?.role === "assistant" && lastRaw?.role !== "user";
 
-        if (!isRunning && lastVisible?.role === "assistant" && lastRaw?.role !== "user") {
+        if (agentDone) {
           setLoading(false);
-          try { if (onAgentAction) onAgentAction(); } catch (_) {}
+          // Only fire onAgentAction once per sent message
+          if (onAgentAction && !actionFiredRef.current) {
+            actionFiredRef.current = true;
+            setTimeout(() => { try { onAgentAction(); } catch (_) {} }, 100);
+          }
         }
       } catch (e) {
         console.error("Subscription callback error:", e);
@@ -91,6 +95,7 @@ function AgentChatWidgetInner({ agentName, onAgentAction }) {
     setInput("");
     setError(null);
     setLoading(true);
+    actionFiredRef.current = false;
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
     try {
