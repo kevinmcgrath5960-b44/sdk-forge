@@ -1,5 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+// Model: gemini-1.5-flash runs on the FREE tier. Swap to "gemini-2.5-flash" if you prefer (may need PAYG).
+const MODEL = "gemini-1.5-flash";
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -7,15 +10,17 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { file_url, json_schema } = await req.json();
-    if (!file_url || !json_schema) return Response.json({ error: 'file_url and json_schema are required' }, { status: 400 });
+    if (!file_url || !json_schema) {
+      return Response.json({ error: 'file_url and json_schema are required' }, { status: 400 });
+    }
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) return Response.json({ error: 'GEMINI_API_KEY is not set' }, { status: 500 });
 
-    // Fetch file from public URL and convert to base64
+    // Fetch the file from its public URL
     const fileRes = await fetch(file_url);
     if (!fileRes.ok) {
-      return Response.json({ error: `Failed to fetch file (HTTP ${fileRes.status})` }, { status: 500 });
+      return Response.json({ error: `Failed to fetch file (HTTP ${fileRes.status})` }, { status: 502 });
     }
 
     const fileBuffer = await fileRes.arrayBuffer();
@@ -23,13 +28,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'File is empty' }, { status: 400 });
     }
 
-    const base64Data = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+    // Convert to base64 in CHUNKS — spreading the whole byte array into
+    // String.fromCharCode(...) overflows the call stack on real files (the 500 you saw).
+    const bytes = new Uint8Array(fileBuffer);
+    let binary = "";
+    const CHUNK = 0x8000; // 32KB at a time
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+    }
+    const base64Data = btoa(binary);
     const mimeType = fileRes.headers.get("content-type") || "application/octet-stream";
 
     const schemaStr = JSON.stringify(json_schema, null, 2);
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,7 +70,6 @@ Deno.serve(async (req) => {
     }
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
     if (!text) {
       return Response.json({ error: "No text response from Gemini API", details: data }, { status: 500 });
     }
