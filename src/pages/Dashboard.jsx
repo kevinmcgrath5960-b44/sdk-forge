@@ -7,7 +7,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, LayoutDashboard, RefreshCw, CheckCircle2, Clock, Zap } from "lucide-react";
+import { Loader2, LayoutDashboard, RefreshCw, CheckCircle2, Clock, Zap, TrendingUp } from "lucide-react";
+import { getRates } from "@/functions/getRates";
 import PageHeader from "@/components/PageHeader";
 import { useToast } from "@/components/ui/use-toast";
 import AgentChatWidget from "@/components/AgentChatWidget";
@@ -30,6 +31,9 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [rates, setRates] = useState(null);
+  const [ratesDate, setRatesDate] = useState(null);
+  const [ratesLoading, setRatesLoading] = useState(true);
 
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
@@ -48,7 +52,16 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => {
+    fetchItems();
+    getRates({}).then((res) => {
+      if (mountedRef.current) {
+        setRates(res.data?.rates || null);
+        setRatesDate(res.data?.date || null);
+        setRatesLoading(false);
+      }
+    }).catch(() => { if (mountedRef.current) setRatesLoading(false); });
+  }, []);
 
   // --- Derived stats ---
   const total = items.length;
@@ -214,6 +227,35 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Exchange Rates */}
+      <Card className="mt-6">
+        <CardHeader className="pb-2 flex-row items-center gap-2 space-y-0">
+          <TrendingUp className="w-4 h-4 text-primary" />
+          <CardTitle className="text-sm font-semibold">Exchange Rates (USD base)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {ratesLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" /> Fetching rates…
+            </div>
+          ) : rates ? (
+            <div>
+              <div className="flex flex-wrap gap-4">
+                {Object.entries(rates).map(([currency, rate]) => (
+                  <div key={currency} className="flex flex-col items-center bg-muted rounded-lg px-4 py-2 min-w-[80px]">
+                    <span className="text-xs font-semibold text-muted-foreground">{currency}</span>
+                    <span className="text-lg font-bold">{Number(rate).toFixed(4)}</span>
+                  </div>
+                ))}
+              </div>
+              {ratesDate && <p className="text-xs text-muted-foreground mt-3">As of {ratesDate}</p>}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Could not load rates.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Legend badges */}
       <div className="flex flex-wrap gap-2 mt-6">
