@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -31,11 +31,21 @@ export default function Dashboard() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const mountedRef = useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
   const fetchItems = async () => {
-    setLoading(true);
-    const data = await base44.entities.Item.list("-created_date", 200);
-    setItems(data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const data = await base44.entities.Item.list("-created_date", 200);
+      if (mountedRef.current) {
+        setItems(data);
+        setLoading(false);
+      }
+    } catch (e) {
+      console.error("fetchItems error:", e);
+      if (mountedRef.current) setLoading(false);
+    }
   };
 
   useEffect(() => { fetchItems(); }, []);
