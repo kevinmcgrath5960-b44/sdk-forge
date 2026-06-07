@@ -19,18 +19,10 @@ export default function Files() {
   const [privateSignedUrl, setPrivateSignedUrl] = useState("");
   const [privateUploading, setPrivateUploading] = useState(false);
 
-  const toBase64 = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
   const uploadPublic = async () => {
     if (!publicFile) return;
     setPublicUploading(true);
-    const fileData = await toBase64(publicFile);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file: fileData });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file: publicFile });
     setPublicUrl(file_url);
     setPublicUploading(false);
     toast({ title: "Public file uploaded" });
@@ -39,8 +31,7 @@ export default function Files() {
   const uploadPrivate = async () => {
     if (!privateFile) return;
     setPrivateUploading(true);
-    const fileData = await toBase64(privateFile);
-    const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: fileData });
+    const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: privateFile });
     const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 300 });
     setPrivateSignedUrl(signed_url);
     setPrivateUploading(false);
