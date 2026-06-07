@@ -12,13 +12,13 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("GEMINI_API_KEY");
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: { sampleCount: 1 }
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ["IMAGE", "TEXT"] }
         }),
       }
     );
@@ -29,14 +29,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: data?.error?.message || "Gemini API error" }, { status: response.status });
     }
 
-    const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
-    if (!b64) return Response.json({ error: "No image returned" }, { status: 500 });
+    // Find the image part in the response
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find(p => p.inlineData);
 
-    // Upload the base64 image to Base44 storage and return a URL
+    if (!imagePart) {
+      return Response.json({ error: "No image returned from Gemini" }, { status: 500 });
+    }
+
+    const b64 = imagePart.inlineData.data;
+    const mimeType = imagePart.inlineData.mimeType || "image/png";
+
+    // Convert base64 to blob and upload
     const imageBytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const blob = new Blob([imageBytes], { type: "image/png" });
-    const formData = new FormData();
-    formData.append("file", blob, "generated.png");
+    const blob = new Blob([imageBytes], { type: mimeType });
 
     const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
     const url = uploadResult?.file_url || uploadResult?.url;
