@@ -12,7 +12,17 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("GEMINI_API_KEY");
 
     // Fetch the file and convert to base64
-    const fileRes = await fetch(file_url);
+    let fileRes;
+    try {
+      fileRes = await fetch(file_url);
+    } catch (fetchError) {
+      return Response.json({ error: `Failed to fetch file: ${fetchError.message}` }, { status: 500 });
+    }
+    
+    if (!fileRes.ok) {
+      return Response.json({ error: `Failed to fetch file: ${fileRes.status}` }, { status: 500 });
+    }
+    
     const fileBuffer = await fileRes.arrayBuffer();
     const base64Data = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
     const mimeType = fileRes.headers.get("content-type") || "application/octet-stream";
@@ -47,7 +57,17 @@ Deno.serve(async (req) => {
     }
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    const output = JSON.parse(text);
+    
+    if (!text) {
+      return Response.json({ error: "No text response from Gemini API", details: data }, { status: 500 });
+    }
+
+    let output;
+    try {
+      output = JSON.parse(text);
+    } catch (parseError) {
+      return Response.json({ error: "Failed to parse JSON response", text, parseError: parseError.message }, { status: 500 });
+    }
 
     return Response.json({ output });
   } catch (error) {
