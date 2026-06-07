@@ -32,7 +32,9 @@ export default function Files() {
     setPublicUploading(true);
     setPublicUrl("");
     const result = await base44.integrations.Core.UploadFile({ file: publicFile });
-    const url = result?.file_url || result?.url || result;
+    // Frontend SDK wraps response in .data
+    const data = result?.data ?? result;
+    const url = data?.file_url || data?.url || (typeof data === "string" ? data : "");
     setPublicUrl(url);
     setPublicUploading(false);
     toast({ title: "Public file uploaded" });
@@ -43,9 +45,11 @@ export default function Files() {
     setPrivateUploading(true);
     setPrivateSignedUrl("");
     const uploadResult = await base44.integrations.Core.UploadPrivateFile({ file: privateFile });
-    const file_uri = uploadResult?.file_uri || uploadResult;
+    const uploadData = uploadResult?.data ?? uploadResult;
+    const file_uri = uploadData?.file_uri || (typeof uploadData === "string" ? uploadData : "");
     const signResult = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 300 });
-    const signed_url = signResult?.signed_url || signResult;
+    const signData = signResult?.data ?? signResult;
+    const signed_url = signData?.signed_url || (typeof signData === "string" ? signData : "");
     setPrivateSignedUrl(signed_url);
     setPrivateUploading(false);
     toast({ title: "Private file uploaded & signed URL created (5 min)" });
