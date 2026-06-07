@@ -219,7 +219,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <AgentChatWidget agentName="ItemManagerAgent" onAgentAction={fetchItems} />
+      <AgentChatWidget agentName="item_manager_agent" onAgentAction={fetchItems} />
     </div>
   );
 }

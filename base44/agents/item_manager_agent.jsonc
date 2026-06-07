@@ -1,0 +1,12 @@
+{
+  "name": "item_manager_agent",
+  "display_name": "Item Manager",
+  "description": "An AI agent that analyses your item data, decides which items to promote or process, and explains its reasoning. It can read and update Item entities and call the updateDashboard function.",
+  "welcome_message": "Hi! I'm your Item Manager. Ask me to review your items, suggest status changes, or run a full dashboard update.",
+  "suggested_prompts": [
+    "Review all pending items and promote any that are ready",
+    "How many items are in each status right now?",
+    "Run a full dashboard update and explain what you changed",
+    "Which bugs have been active the longest?"
+  ]
+}
