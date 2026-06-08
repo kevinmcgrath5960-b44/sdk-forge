@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, LayoutDashboard, RefreshCw, CheckCircle2, Clock, Zap, TrendingUp } from "lucide-react";
 import { getRates } from "@/functions/getRates";
+import ExchangeRateChart from "@/components/ExchangeRateChart";
 import PageHeader from "@/components/PageHeader";
 import { useToast } from "@/components/ui/use-toast";
 import AgentChatWidget from "@/components/AgentChatWidget";
@@ -230,30 +231,24 @@ export default function Dashboard() {
 
       {/* Exchange Rates */}
       <Card className="mt-6">
-        <CardHeader className="pb-2 flex-row items-center gap-2 space-y-0">
-          <TrendingUp className="w-4 h-4 text-primary" />
-          <CardTitle className="text-sm font-semibold">Exchange Rates (GBP → EUR, USD, DKK)</CardTitle>
+        <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            <CardTitle className="text-sm font-semibold">Exchange Rates (GBP → EUR, USD, DKK)</CardTitle>
+          </div>
+          {!ratesLoading && rates && (
+            <div className="flex gap-3">
+              {Object.entries(rates).map(([currency, rate]) => (
+                <div key={currency} className="flex flex-col items-center bg-muted rounded-lg px-3 py-1 min-w-[64px]">
+                  <span className="text-[10px] font-semibold text-muted-foreground">{currency}</span>
+                  <span className="text-sm font-bold">{Number(rate).toFixed(4)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
-          {ratesLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" /> Fetching rates…
-            </div>
-          ) : rates ? (
-            <div>
-              <div className="flex flex-wrap gap-4">
-                {Object.entries(rates).map(([currency, rate]) => (
-                  <div key={currency} className="flex flex-col items-center bg-muted rounded-lg px-4 py-2 min-w-[80px]">
-                    <span className="text-xs font-semibold text-muted-foreground">{currency}</span>
-                    <span className="text-lg font-bold">{Number(rate).toFixed(4)}</span>
-                  </div>
-                ))}
-              </div>
-              {ratesDate && <p className="text-xs text-muted-foreground mt-3">As of {ratesDate}</p>}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Could not load rates.</p>
-          )}
+          <ExchangeRateChart />
         </CardContent>
       </Card>
 
